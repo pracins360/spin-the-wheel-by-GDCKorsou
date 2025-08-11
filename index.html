@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Changes Spin Wheel</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #f8f9fa, #e0f7fa);
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 2em;
+    color: #0077b6;
+    margin-bottom: 10px;
+  }
+
+  #wheel-container {
+    position: relative;
+    width: 320px;
+    margin: 0 auto;
+  }
+
+  #wheel {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+
+  #pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 30px solid #ff6f61;
+    z-index: 10;
+  }
+
+  #spinBtn {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 1.2em;
+    background-color: #00b4d8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  #spinBtn:hover {
+    background-color: #0096c7;
+  }
+
+  #result {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: #023e8a;
+  }
+
+  h3 {
+    margin-top: 40px;
+    color: #555;
+    font-weight: normal;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .confetti {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 9999;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #ff6f61;
+    animation: fall 3s linear infinite;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h2>Changes</h2>
+<div id="wheel-container">
+  <div id="pointer"></div>
+  <div id="wheel"></div>
+</div>
+<button id="spinBtn">SPIN</button>
+<div id="result"></div>
+<h3>Sponsored by Aqualectra</h3>
+<div class="confetti" id="confetti"></div>
+
+<script>
+// -------- CONFIGURATION --------
+const prizes = [
+  "Free Spin",
+  "No OB",
+  "Pocket Gift",
+  "Sorry, No Prize",
+  "Try Next Time",
+  "10% Discount",
+  "No Prize",
+  "2nd Goods 50%"
+];
+
+const colors = [
+  "#ff6f61", "#6a4c93", "#f9c74f", "#90be6d",
+  "#43aa8b", "#577590", "#f94144", "#f3722c"
+];
+
+const wheelSegments = [];
+let currentAngle = 0;
+
+prizes.forEach((label, index) => {
+  wheelSegments.push({
+    label,
+    startAngle: currentAngle,
+    endAngle: currentAngle + 45,
+    color: colors[index]
+  });
+  currentAngle += 45;
+});
+
+const wheel = document.getElementById('wheel');
+
+function drawWheel() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 300;
+  const ctx = canvas.getContext('2d');
+
+  wheel.innerHTML = '';
+  ctx.translate(150, 150);
+  wheel.appendChild(canvas);
+
+  wheelSegments.forEach((segment, index) => {
+    const startDeg = segment.startAngle;
+    const endDeg = segment.endAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 150, startDeg * Math.PI / 180, endDeg * Math.PI / 180);
+    ctx.closePath();
+    ctx.fillStyle = segment.color;
+    ctx.fill();
+
+    ctx.save();
+    const midAngle = (startDeg + endDeg) / 2;
+    ctx.rotate(midAngle * Math.PI / 180);
+    ctx.translate(100, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.fillText(segment.label, -40, 5);
+    ctx.restore();
+  });
+}
+
+drawWheel();
+
+const spinBtn = document.getElementById('spinBtn');
+const resultDiv = document.getElementById('result');
+
+spinBtn.addEventListener('click', () => {
+  spinWheel();
+});
+
+function spinWheel() {
+  const randIndex = Math.floor(Math.random() * prizes.length);
+  const selectedSegment = wheelSegments[randIndex];
+  const midAngle = (selectedSegment.startAngle + selectedSegment.endAngle) / 2;
+  const spins = 5;
+  const targetAngle = 360 * spins + (90 - midAngle);
+
+  animateSpin(targetAngle, selectedSegment);
+}
+
+function animateSpin(target, segment) {
+  let start = null;
+  const duration = 4000;
+  const initialRotation = 0;
+
+  function step(timestamp) {
+    if (!start) start = timestamp;
+    const progress = timestamp - start;
+    const easing = Math.min(progress / duration, 1);
+    const angle = initialRotation + easing * (target - initialRotation);
+    rotateWheel(angle);
+    if (progress < duration) {
+      requestAnimationFrame(step);
+    } else {
+      resultDiv.innerHTML = "Result: " + segment.label;
+      if (!segment.label.toLowerCase().includes("no")) {
+        showConfetti();
+        // playSound(); // Uncomment if you add a sound file
+        alert("🎉 Congratulations! Your prize code: " + generatePrizeCode());
+      }
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function rotateWheel(angle) {
+  const ctx = wheel.children[0].getContext('2d');
+  ctx.clearRect(-150, -150, 300, 300);
+  ctx.save();
+  ctx.translate(150, 150);
+  ctx.rotate(angle * Math.PI / 180);
+  ctx.translate(-150, -150);
+
+  wheelSegments.forEach((segment, index) => {
+    const startDeg = segment.startAngle;
+    const endDeg = segment.endAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(150, 150);
+    ctx.arc(150, 150, 150, startDeg * Math.PI / 180, endDeg * Math.PI / 180);
+    ctx.closePath();
+    ctx.fillStyle = segment.color;
+    ctx.fill();
+
+    ctx.save();
+    const midAng = (startDeg + endDeg) / 2;
+    ctx.translate(150, 150);
+    ctx.rotate(midAng * Math.PI / 180);
+    ctx.translate(100, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.fillText(segment.label, -40, 5);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+function generatePrizeCode() {
+  return 'PRIZE' + Math.floor(Math.random() * 100000);
+}
+
+function showConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  for (let i = 0; i < 100; i++) {
+    const piece = document.createElement('div');
+    piece.classList.add('confetti-piece');
+    piece.style.left = Math.random() * window.innerWidth + 'px';
+    piece.style.top = '-10px';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    container.appendChild(piece);
+  }
+}
+
+// Optional sound effect
+// function playSound() {
+//   const audio = new Audio('your-sound.mp3');
+//   audio.play();
+// }
+</script>
+
+</body>
+</html>
