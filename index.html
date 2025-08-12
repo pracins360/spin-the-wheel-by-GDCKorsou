@@ -33,36 +33,56 @@
       background-color: #999;
       cursor: not-allowed;
     }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .sponsors {
+      margin-top: 40px;
+    }
+    .sponsors img {
+      height: 50px;
+      margin: 0 10px;
+    }
   </style>
 </head>
 <body>
   <h1>🎡 Spin the Wheel!</h1>
   <canvas id="wheel" width="300" height="300"></canvas>
   <button id="spinBtn">Spin</button>
+  <div id="result"></div>
+
+  <div class="sponsors">
+    <img src="https://via.placeholder.com/100x50?text=Sponsor+1" alt="Sponsor 1">
+    <img src="https://via.placeholder.com/100x50?text=Sponsor+2" alt="Sponsor 2">
+  </div>
 
   <script>
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
     const spinBtn = document.getElementById("spinBtn");
+    const resultDiv = document.getElementById("result");
 
     const prizes = [
-      "Smile 😊",
-      "Be Happy 😄",
-      "Have a Nice Day 🌞",
-      "Sorry, No Prize 🙁",
-      "Try Again 🔄",
-      "You're the Winner 🎉",
-      "Keep Smiling 😁",
-      "Enjoy the Moment ✨"
+      "Dwars 😊",
+      "Dwars 😄",
+      "Dwars 🌞",
+      "Dwars 🙁",
+      "Dwars 🔄",
+      "Dwars 🎉",
+      "Dwars 😁",
+      "Dwars ✨"
     ];
 
     const colors = ["#FFB6C1", "#FFD700", "#90EE90", "#87CEFA", "#FFA07A", "#DDA0DD", "#00CED1", "#FF69B4"];
     const radius = canvas.width / 2;
+    let rotation = 0;
 
-    function drawWheel() {
+    function drawWheel(angle = 0) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw triangle pointer
+      // Triangle pointer
       ctx.beginPath();
       ctx.moveTo(radius - 10, 10);
       ctx.lineTo(radius + 10, 10);
@@ -73,12 +93,13 @@
 
       ctx.save();
       ctx.translate(radius, radius);
+      ctx.rotate(angle);
 
       for (let i = 0; i < prizes.length; i++) {
         const startAngle = (i * 2 * Math.PI) / prizes.length;
         const endAngle = ((i + 1) * 2 * Math.PI) / prizes.length;
 
-        // Draw segment
+        // Segment
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, startAngle, endAngle);
@@ -87,7 +108,7 @@
         ctx.fill();
         ctx.stroke();
 
-        // Draw label
+        // Label
         const midAngle = (startAngle + endAngle) / 2;
         ctx.save();
         ctx.rotate(midAngle);
@@ -105,14 +126,32 @@
 
     function spin() {
       spinBtn.disabled = true;
-      const randomIndex = Math.floor(Math.random() * prizes.length);
-      setTimeout(() => {
-        alert(prizes[randomIndex]);
-        spinBtn.disabled = false;
-      }, 1000);
+      resultDiv.textContent = "";
+
+      let spins = 30; // total frames
+      let current = 0;
+      let finalAngle = Math.random() * 2 * Math.PI;
+
+      const interval = setInterval(() => {
+        rotation += 0.3;
+        drawWheel(rotation);
+        current++;
+
+        if (current >= spins) {
+          clearInterval(interval);
+
+          // Normalize angle
+          const normalized = (rotation + finalAngle) % (2 * Math.PI);
+          const index = Math.floor(prizes.length - (normalized / (2 * Math.PI)) * prizes.length) % prizes.length;
+
+          resultDiv.textContent = `${prizes[index]} — Thanks for playing!`;
+          spinBtn.disabled = false;
+        }
+      }, 50);
     }
 
     drawWheel();
+    spinBtn.addEventListener("click", spin);
   </script>
 </body>
 </html>
