@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mock & More Spin Wheel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 0;
+    }
+    h2 {
+      font-size: 1.1em;
+      color: #555;
+      margin-top: 5px;
+    }
+    #wheel-container {
+      width: 90vw;
+      max-width: 320px;
+      margin: 30px auto;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+    }
+    #spinBtn {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .sponsors {
+      margin-top: 30px;
+    }
+    .sponsors img {
+      height: 40px;
+      margin: 0 10px;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    .footer img {
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Mock & More</h1>
+  <h2>Spin & Win – Instant Rewards for Every Visitor!</h2>
+
+  <div id="wheel-container">
+    <canvas id="wheelCanvas" width="300" height="300"></canvas>
+  </div>
+
+  <button id="spinBtn">Spin the Wheel!</button>
+
+  <div class="sponsors">
+    <img src="logo1.png" alt="Sponsor 1">
+    <img src="logo2.png" alt="Sponsor 2">
+    <img src="logo3.png" alt="Sponsor 3">
+  </div>
+
+  <div class="footer">
+    <img src="ubiz-logo.png" alt="Ubiz">
+    <span>Download <strong>Ubiz</strong> for exclusive promos & updates from Mock & More</span>
+  </div>
+
+  <audio id="winSound" src="celebration.mp3" preload="auto"></audio>
+
+  <script>
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const winSound = document.getElementById('winSound');
+
+    const segments = ['10% Off', 'Free Drink', 'Mystery Prize', 'Try Again', 'Buy 1 Get 1', 'Free Dessert'];
+    const colors = ['#FFB347', '#FF6961', '#77DD77', '#AEC6CF', '#FDFD96', '#CBAACB'];
+    let angle = 0;
+    let spinning = false;
+
+    function drawWheel() {
+      const radius = canvas.width / 2;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const arcSize = (2 * Math.PI) / segments.length;
+
+      for (let i = 0; i < segments.length; i++) {
+        const startAngle = i * arcSize;
+        const endAngle = startAngle + arcSize;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        ctx.stroke();
+
+        // Label
+        const labelAngle = startAngle + arcSize / 2;
+        const labelX = centerX + Math.cos(labelAngle) * radius * 0.65;
+        const labelY = centerY + Math.sin(labelAngle) * radius * 0.65;
+        ctx.fillStyle = '#000';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(segments[i], labelX, labelY);
+      }
+    }
+
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+      spinBtn.disabled = true;
+
+      let spinAngle = Math.random() * 360 + 720; // 2+ full rotations
+      let currentAngle = 0;
+      const spinSpeed = 10;
+
+      const spinInterval = setInterval(() => {
+        currentAngle += spinSpeed;
+        if (currentAngle >= spinAngle) {
+          clearInterval(spinInterval);
+          spinning = false;
+          spinBtn.disabled = false;
+
+          const finalAngle = (spinAngle % 360);
+          const segmentIndex = Math.floor(segments.length - (finalAngle / 360) * segments.length) % segments.length;
+          alert(`You won: ${segments[segmentIndex]}!`);
+          winSound.play();
+        }
+        canvas.style.transform = `rotate(${currentAngle}deg)`;
+      }, 20);
+
+      setTimeout(() => {
+        spinBtn.disabled = false;
+      }, 15000); // Cooldown
+    }
+
+    drawWheel();
+    spinBtn.addEventListener('click', spinWheel);
+  </script>
+
+</body>
+</html>
