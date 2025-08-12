@@ -84,10 +84,10 @@
 
     const segments = ['10% Off', 'Free Drink', 'Mystery Prize', 'Try Again', 'Buy 1 Get 1', 'Free Dessert'];
     const colors = ['#FFB347', '#FF6961', '#77DD77', '#AEC6CF', '#FDFD96', '#CBAACB'];
-    let angle = 0;
     let spinning = false;
 
     function drawWheel() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const radius = canvas.width / 2;
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
@@ -104,7 +104,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Label
         const labelAngle = startAngle + arcSize / 2;
         const labelX = centerX + Math.cos(labelAngle) * radius * 0.65;
         const labelY = centerY + Math.sin(labelAngle) * radius * 0.65;
@@ -121,7 +120,7 @@
       spinning = true;
       spinBtn.disabled = true;
 
-      let spinAngle = Math.random() * 360 + 720; // 2+ full rotations
+      let spinAngle = Math.random() * 360 + 720;
       let currentAngle = 0;
       const spinSpeed = 10;
 
@@ -130,19 +129,18 @@
         if (currentAngle >= spinAngle) {
           clearInterval(spinInterval);
           spinning = false;
-          spinBtn.disabled = false;
 
           const finalAngle = (spinAngle % 360);
           const segmentIndex = Math.floor(segments.length - (finalAngle / 360) * segments.length) % segments.length;
           alert(`You won: ${segments[segmentIndex]}!`);
           winSound.play();
+
+          setTimeout(() => {
+            spinBtn.disabled = false;
+          }, 15000);
         }
         canvas.style.transform = `rotate(${currentAngle}deg)`;
       }, 20);
-
-      setTimeout(() => {
-        spinBtn.disabled = false;
-      }, 15000); // Cooldown
     }
 
     drawWheel();
