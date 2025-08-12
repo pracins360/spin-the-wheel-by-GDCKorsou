@@ -1,171 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dwars Wheel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f9f9f9;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 5px;
-    }
-    h2 {
-      font-size: 18px;
-      color: #555;
-      margin-top: 0;
-    }
-    canvas {
-      background: #fff;
-      border: 2px solid #333;
-      margin: 20px auto;
-      display: block;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 24px;
-      font-size: 16px;
-      background-color: #0077b6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #999;
-      cursor: not-allowed;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .sponsors {
-      margin-top: 40px;
-    }
-    .sponsors img {
-      height: 50px;
-      margin: 0 10px;
-      vertical-align: middle;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Changes Spin Wheel</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #f8f9fa, #e0f7fa);
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 2em;
+    color: #0077b6;
+    margin-bottom: 10px;
+  }
+
+  #wheel-container {
+    position: relative;
+    width: 320px;
+    margin: 0 auto;
+  }
+
+  #wheel {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+
+  #pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 30px solid #ff6f61;
+    z-index: 10;
+  }
+
+  #spinBtn {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 1.2em;
+    background-color: #00b4d8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  #spinBtn:hover {
+    background-color: #0096c7;
+  }
+
+  #result {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: #023e8a;
+  }
+
+  h3 {
+    margin-top: 40px;
+    color: #555;
+    font-weight: normal;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .confetti {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 9999;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #ff6f61;
+    animation: fall 3s linear infinite;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+</style>
 </head>
 <body>
-  <h1>Dwars Wheel</h1>
-  <h2>Spin for a smile, win a moment</h2>
 
-  <canvas id="wheel" width="300" height="300"></canvas>
-  <button id="spinBtn">Spin</button>
-  <div id="result"></div>
+<h2>Changes</h2>
+<div id="wheel-container">
+  <div id="pointer"></div>
+  <div id="wheel"></div>
+</div>
+<button id="spinBtn">SPIN</button>
+<div id="result"></div>
+<h3>Sponsored by Aqualectra</h3>
+<div class="confetti" id="confetti"></div>
 
-  <div class="sponsors">
-    <img src="https://via.placeholder.com/100x50?text=Sponsor+1" alt="Sponsor 1">
-    <img src="https://via.placeholder.com/100x50?text=Sponsor+2" alt="Sponsor 2">
-    <img src="https://via.placeholder.com/100x50?text=Sponsor+3" alt="Sponsor 3">
-  </div>
+<script>
+// -------- CONFIGURATION --------
+const prizes = [
+  "Free Spin",
+  "No OB",
+  "Pocket Gift",
+  "Sorry, No Prize",
+  "Try Next Time",
+  "10% Discount",
+  "No Prize",
+  "2nd Goods 50%"
+];
 
-  <audio id="spinSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+const colors = [
+  "#ff6f61", "#6a4c93", "#f9c74f", "#90be6d",
+  "#43aa8b", "#577590", "#f94144", "#f3722c"
+];
 
-  <script>
-    const canvas = document.getElementById("wheel");
-    const ctx = canvas.getContext("2d");
-    const spinBtn = document.getElementById("spinBtn");
-    const resultDiv = document.getElementById("result");
-    const spinSound = document.getElementById("spinSound");
+const wheelSegments = [];
+let currentAngle = 0;
 
-    const prizes = [
-      "Smile 😊",
-      "Be Happy 😄",
-      "Have a Nice Day 🌞",
-      "Sorry, No Prize 🙁",
-      "Try Again 🔄",
-      "You're the Winner 🎉",
-      "Keep Smiling 😁",
-      "Enjoy the Moment ✨"
-    ];
+prizes.forEach((label, index) => {
+  wheelSegments.push({
+    label,
+    startAngle: currentAngle,
+    endAngle: currentAngle + 45,
+    color: colors[index]
+  });
+  currentAngle += 45;
+});
 
-    const colors = ["#FFB6C1", "#FFD700", "#90EE90", "#87CEFA", "#FFA07A", "#DDA0DD", "#00CED1", "#FF69B4"];
-    const radius = canvas.width / 2;
-    let rotation = 0;
+const wheel = document.getElementById('wheel');
 
-    function drawWheel(angle = 0) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawWheel() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 300;
+  const ctx = canvas.getContext('2d');
 
-      // Triangle pointer
-      ctx.beginPath();
-      ctx.moveTo(radius - 10, 10);
-      ctx.lineTo(radius + 10, 10);
-      ctx.lineTo(radius, 30);
-      ctx.closePath();
-      ctx.fillStyle = "#333";
-      ctx.fill();
+  wheel.innerHTML = '';
+  ctx.translate(150, 150);
+  wheel.appendChild(canvas);
 
-      ctx.save();
-      ctx.translate(radius, radius);
-      ctx.rotate(angle);
+  wheelSegments.forEach((segment, index) => {
+    const startDeg = segment.startAngle;
+    const endDeg = segment.endAngle;
 
-      for (let i = 0; i < prizes.length; i++) {
-        const startAngle = (i * 2 * Math.PI) / prizes.length;
-        const endAngle = ((i + 1) * 2 * Math.PI) / prizes.length;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 150, startDeg * Math.PI / 180, endDeg * Math.PI / 180);
+    ctx.closePath();
+    ctx.fillStyle = segment.color;
+    ctx.fill();
 
-        // Segment
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius, startAngle, endAngle);
-        ctx.closePath();
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.fill();
-        ctx.stroke();
+    ctx.save();
+    const midAngle = (startDeg + endDeg) / 2;
+    ctx.rotate(midAngle * Math.PI / 180);
+    ctx.translate(100, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.fillText(segment.label, -40, 5);
+    ctx.restore();
+  });
+}
 
-        // Label
-        const midAngle = (startAngle + endAngle) / 2;
-        ctx.save();
-        ctx.rotate(midAngle);
-        ctx.translate(radius - 40, 0);
-        ctx.rotate(Math.PI / 2);
-        ctx.fillStyle = "#000";
-        ctx.font = "13px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(prizes[i], 0, 0);
-        ctx.restore();
+drawWheel();
+
+const spinBtn = document.getElementById('spinBtn');
+const resultDiv = document.getElementById('result');
+
+spinBtn.addEventListener('click', () => {
+  spinWheel();
+});
+
+function spinWheel() {
+  const randIndex = Math.floor(Math.random() * prizes.length);
+  const selectedSegment = wheelSegments[randIndex];
+  const midAngle = (selectedSegment.startAngle + selectedSegment.endAngle) / 2;
+  const spins = 5;
+  const targetAngle = 360 * spins + (90 - midAngle);
+
+  animateSpin(targetAngle, selectedSegment);
+}
+
+function animateSpin(target, segment) {
+  let start = null;
+  const duration = 4000;
+  const initialRotation = 0;
+
+  function step(timestamp) {
+    if (!start) start = timestamp;
+    const progress = timestamp - start;
+    const easing = Math.min(progress / duration, 1);
+    const angle = initialRotation + easing * (target - initialRotation);
+    rotateWheel(angle);
+    if (progress < duration) {
+      requestAnimationFrame(step);
+    } else {
+      resultDiv.innerHTML = "Result: " + segment.label;
+      if (!segment.label.toLowerCase().includes("no")) {
+        showConfetti();
+        // playSound(); // Uncomment if you add a sound file
+        alert("🎉 Congratulations! Your prize code: " + generatePrizeCode());
       }
-
-      ctx.restore();
     }
+  }
 
-    function spin() {
-      spinBtn.disabled = true;
-      resultDiv.textContent = "";
-      spinSound.play();
+  requestAnimationFrame(step);
+}
 
-      let spins = 30;
-      let current = 0;
-      let finalAngle = Math.random() * 2 * Math.PI;
+function rotateWheel(angle) {
+  const ctx = wheel.children[0].getContext('2d');
+  ctx.clearRect(-150, -150, 300, 300);
+  ctx.save();
+  ctx.translate(150, 150);
+  ctx.rotate(angle * Math.PI / 180);
+  ctx.translate(-150, -150);
 
-      const interval = setInterval(() => {
-        rotation += 0.3;
-        drawWheel(rotation);
-        current++;
+  wheelSegments.forEach((segment, index) => {
+    const startDeg = segment.startAngle;
+    const endDeg = segment.endAngle;
 
-        if (current >= spins) {
-          clearInterval(interval);
+    ctx.beginPath();
+    ctx.moveTo(150, 150);
+    ctx.arc(150, 150, 150, startDeg * Math.PI / 180, endDeg * Math.PI / 180);
+    ctx.closePath();
+    ctx.fillStyle = segment.color;
+    ctx.fill();
 
-          const normalized = (rotation + finalAngle) % (2 * Math.PI);
-          const index = Math.floor(prizes.length - (normalized / (2 * Math.PI)) * prizes.length) % prizes.length;
+    ctx.save();
+    const midAng = (startDeg + endDeg) / 2;
+    ctx.translate(150, 150);
+    ctx.rotate(midAng * Math.PI / 180);
+    ctx.translate(100, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.fillText(segment.label, -40, 5);
+    ctx.restore();
+  });
+  ctx.restore();
+}
 
-          resultDiv.textContent = `${prizes[index]} — Thanks for playing!`;
-          spinBtn.disabled = false;
-        }
-      }, 50);
-    }
+function generatePrizeCode() {
+  return 'PRIZE' + Math.floor(Math.random() * 100000);
+}
 
-    drawWheel();
-    spinBtn.addEventListener("click", spin);
-  </script>
+function showConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  for (let i = 0; i < 100; i++) {
+    const piece = document.createElement('div');
+    piece.classList.add('confetti-piece');
+    piece.style.left = Math.random() * window.innerWidth + 'px';
+    piece.style.top = '-10px';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    container.appendChild(piece);
+  }
+}
+
+// Optional sound effect
+// function playSound() {
+//   const audio = new Audio('your-sound.mp3');
+//   audio.play();
+// }
+</script>
+
 </body>
 </html>
